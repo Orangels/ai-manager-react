@@ -1,12 +1,12 @@
 import React from 'react'
 import {
   Card, Popconfirm, Button, Icon, Table, Divider, BackTop, Affix, Anchor, Form, InputNumber, Input, Select,
-  Cascader, Tag, message, Tabs, Row, Col, Modal, Progress, Drawer, Spin
+  Cascader, Tag, message, Tabs, Row, Col, Modal, Progress, Drawer, Spin, Tooltip
 } from 'antd'
 import {toJS} from 'mobx'
 import axios from 'axios'
 import CustomBreadcrumb from '../../components/CustomBreadcrumb/index'
-import {_fetch, transform_grade, getGrade, dateFormat, deepCopy, timestamp2Date, _GET, _POST} from '../../utils/utils'
+import {_fetch, transform_grade, getGrade, dateFormat, deepCopy, timestamp2Date, _GET, _POST, duplicates} from '../../utils/utils'
 import LoadableComponent from '../../utils/LoadableComponent'
 import {inject, observer} from "mobx-react";
 import {markMgtData, markMgtTemp, HOST, markMgtDataReID, updateIDs} from '../../utils/url_config'
@@ -54,7 +54,8 @@ class UnitTestView extends React.Component {
     super(props);
     // 初始状态
     this.state = {
-      loading:false,
+      dataset_max_num: 100,
+      loading: false,
       modal_visible: false,
       drawer_visible: false,
       user_name: '',
@@ -257,7 +258,8 @@ class UnitTestView extends React.Component {
     this._mouseup = this._mouseup.bind(this)
     this._mousedown = this._mousedown.bind(this)
     this._isDraggingChange = this._isDraggingChange.bind(this)
-    // this._contextmenu = this._contextmenu.bind(this)
+    this._otherCanvasMouseMove = this._otherCanvasMouseMove.bind(this)
+    this._contextmenu = this._contextmenu.bind(this)
     // this.deleLayer = this.deleLayer.bind(this)
     this._initCanvasDom = this._initCanvasDom.bind(this)
     this._reUpdateLayers = this._reUpdateLayers.bind(this)
@@ -271,7 +273,7 @@ class UnitTestView extends React.Component {
   }
 
   CreateUpdateIDFormManFun = () => {
-    console.log("修改 id 表单")
+
     const CreateFormMan = Form.create()(props => {
 
       const {dispatch, form} = props;
@@ -318,7 +320,7 @@ class UnitTestView extends React.Component {
   }
 
   CreateChangeIDsFormManFun = () => {
-    console.log("修改 id 表单")
+
     const CreateFormMan = Form.create()(props => {
 
       const {dispatch, form} = props;
@@ -423,22 +425,42 @@ class UnitTestView extends React.Component {
     // 如果是非收藏按钮跳转进来的 ： 那么请求下一次数据页码加一
     if (flag === 'save') {
       console.log('保存, 下一张')
-      console.log(this.state.canvas_reid_0.currentImgData)
-      this.saveInfo(
-        (res) => {
-          // console.log(this.wholeVar)
-          if (this.state.wholeVar.currentIndex > (this.state.wholeVar.finished + 1)) return;
-          if (!(this.is_collection && !this.canvas_reid_0.currentImgData.props.isCollection)) {
-            this.state.wholeVar.currentIndex += 1; // 请求下一页
-            if (this.state.wholeVar.currentIndex > this.state.wholeVar.total) {
-              // this.$router.push({ path: "/task-center"});
-              return;
-            }
-          }
-          this.clearCanvas();
-          this._getImgList();
+
+      //检测是否有重复 id 及 -1(未标id)
+      let tempLayers = this.refs.canvasPanel.state.canvasRectObj.layers;
+      let unMarkedIDs = new Set()
+      let idArr = tempLayers.map((value, index) => {
+        if (value.id == -1) {
+          unMarkedIDs.add(value.id)
         }
-      )
+        return value.id
+      })
+
+      // 返回值是 Set
+      let repeatIDs = duplicates(idArr)
+      repeatIDs = [...new Set([...repeatIDs, ...unMarkedIDs])]
+
+
+      if (repeatIDs.length) {
+        message.error('有重复 id 或 未标注 id, 请修改')
+        this.refs.canvasPanel.state.canvasRectObj.highlightSelectRect(repeatIDs, this.refs.canvasPanel)
+      } else {
+        this.saveInfo(
+          (res) => {
+            // console.log(this.wholeVar)
+            if (this.state.wholeVar.currentIndex > (this.state.wholeVar.finished + 1)) return;
+            if (!(this.is_collection && !this.canvas_reid_0.currentImgData.props.isCollection)) {
+              this.state.wholeVar.currentIndex += 1; // 请求下一页
+              if (this.state.wholeVar.currentIndex > this.state.wholeVar.total) {
+                // this.$router.push({ path: "/task-center"});
+                return;
+              }
+            }
+            this.clearCanvas();
+            this._getImgList();
+          }
+        )
+      }
     } else {
       if (this.state.wholeVar.currentIndex < this.state.wholeVar.finished) {
 
@@ -462,8 +484,6 @@ class UnitTestView extends React.Component {
         })
 
       }
-
-
     }
   }
 
@@ -530,7 +550,8 @@ class UnitTestView extends React.Component {
       mession_id: this.state.mession_id,
       mark_info: mark_info,
       pic_info: pic_info,
-      user_name: this.state.user_name
+      user_name: this.state.user_name,
+      maxID: this.state.dataset_max_num,
     };
     console.log(params)
     _fetch(local_url + markMgtDataReID, params, (res) => {
@@ -543,7 +564,7 @@ class UnitTestView extends React.Component {
     })
   }
 
-  _initCanvasDom(flag) {
+  _initCanvasDom(flag, callback) {
     // let app = document.getElementById('app').clientHeight;
     let app = document.documentElement.clientHeight
     document.getElementsByClassName('UnitTestView')[0].style.height = app + 'px';//初始化高度
@@ -626,6 +647,8 @@ class UnitTestView extends React.Component {
       canvas_last_reid_top,
       canvas_last_reid_bot,
       canvas_last_reid_center
+    }, ()=>{
+
     })
   }
 
@@ -746,7 +769,8 @@ class UnitTestView extends React.Component {
           canvas_last_reid_top: canvas_last_reid_top,
           canvas_last_reid_bot: canvas_last_reid_bot,
           canvas_last_reid_center: canvas_last_reid_center,
-          wholeVar: wholeVar
+          wholeVar: wholeVar,
+          dataset_max_num: res.maxID || 10000
         }, () => {
           console.log(this.state.canvas_reid_0.currentImgData)
           console.log(this.state.canvas_last_reid_top.currentImgData)
@@ -756,6 +780,7 @@ class UnitTestView extends React.Component {
           setTimeout(() => {
             this.echoDraw()
           }, 500);
+
         })
       } else {
         message.warning("照片数据查询失败!");
@@ -967,7 +992,7 @@ class UnitTestView extends React.Component {
     let layersTemp = JSON.parse(JSON.stringify(layers));
 
     canvas_params.options.layers = deepCopy(JSON.parse(JSON.stringify(layers)))
-    console.log(layersTemp)
+
     this.setState({
       num: num,
       [state_tag[tag]]: canvas_params
@@ -1071,9 +1096,9 @@ class UnitTestView extends React.Component {
       switch (true) {
         case (e.code === 'KeyD'):
           console.log('保存, 下一页')
-          if (this.state.wholeVar.currentIndex + 1<= this.state.wholeVar.total) {
+          if (this.state.wholeVar.currentIndex + 1 <= this.state.wholeVar.total) {
             this.nextPage('save');// 保存并下一页  ---  ‘Ctrl’ + ‘s’
-          }else {
+          } else {
             message.warning("已是最后一张")
           }
           break;
@@ -1081,7 +1106,7 @@ class UnitTestView extends React.Component {
           console.log('上一页')
           if (this.state.wholeVar.currentIndex >= 1) {
             this.prevPage();// 保存并下一页  ---  ‘Ctrl’ + ‘s’
-          }else {
+          } else {
             message.warning("已是第一张")
           }
           break;
@@ -1089,7 +1114,7 @@ class UnitTestView extends React.Component {
           console.log('上一页')
           if (this.state.wholeVar.currentIndex >= 1) {
             this.prevPage();// 保存并下一页  ---  ‘Ctrl’ + ‘s’
-          }else {
+          } else {
             message.warning("已是第一张")
           }
           break;
@@ -1101,7 +1126,7 @@ class UnitTestView extends React.Component {
           console.log(this.state.wholeVar.finished)
           if (this.state.wholeVar.currentIndex + 1 < endNum) {
             this.nextPage();// 保存并下一页  ---  ‘Ctrl’ + ‘s’
-          }else {
+          } else {
             message.warning("已是最后一张")
           }
           break;
@@ -1132,8 +1157,24 @@ class UnitTestView extends React.Component {
     }, 0);
   }
 
+  _otherCanvasMouseMove(id) {
+    let last_fish_imgs_refs = [this.refs.canvasPanel_last_top, this.refs.canvasPanel_last_bot, this.refs.canvasPanel_last_center]
+    let rootCanvasImgPath = this.state.canvas_reid_0.currentImgData.props.src
+    switch (true) {
+      case (rootCanvasImgPath.indexOf("top") !== -1):
+        last_fish_imgs_refs[0].state.canvasRectObj.highlightSelectRect([id], last_fish_imgs_refs[0])
+        break;
+      case (rootCanvasImgPath.indexOf("bot") !== -1):
+        last_fish_imgs_refs[1].state.canvasRectObj.highlightSelectRect([id], last_fish_imgs_refs[1])
+        break;
+      case (rootCanvasImgPath.indexOf("center") !== -1):
+        last_fish_imgs_refs[2].state.canvasRectObj.highlightSelectRect([id], last_fish_imgs_refs[2])
+        break;
+    }
+  }
+
   _mousedown(e) {
-    // console.log(e)
+
     let newVal = this.refs.canvasPanel.state.canvasRectObj.layers;
     if (!newVal.length) return;
     this.rectInLayer = [];
@@ -1146,22 +1187,54 @@ class UnitTestView extends React.Component {
     })
     if (this.rectInLayer.length == 1) {
       console.log(this.rectInLayer[0])
-      this.setState({
-        modal_visible: true
-      }, () => {
-        //显示 modal 时移除键盘监听, 取消和确定时添加 键盘监听
-        document.removeEventListener('keydown', this._keypress);
-        let ReID_input = document.getElementsByClassName('ReID_input')[0]
-        if (ReID_input) {
-          setTimeout(() => {
-            ReID_input.focus()
-            ReID_input.select()
-          }, 100)
-        }
-      })
+
+      //鼠标左键
+      if (e.button == 0) {
+        this.setState({
+          modal_visible: true
+        }, () => {
+          //显示 modal 时移除键盘监听, 取消和确定时添加 键盘监听
+          document.removeEventListener('keydown', this._keypress);
+          let ReID_input = document.getElementsByClassName('ReID_input')[0]
+          if (ReID_input) {
+            setTimeout(() => {
+              ReID_input.focus()
+              ReID_input.select()
+            }, 100)
+          }
+        })
+      } else if (e.button == 2) {
+        //鼠标右键
+        let new_ID = this.state.dataset_max_num + 1
+
+        let newVal = this.refs.canvasPanel.state.canvasRectObj.layers;
+        if (!newVal.length) return;
+        newVal.forEach((item, index) => {
+          if (this.rectInLayer[0].labelOpt.idx === item.labelOpt.idx) {
+            item.id = parseInt(new_ID)
+          }
+        })
+        let canvas_reid_0 = deepCopy(this.state.canvas_reid_0)
+        canvas_reid_0.options.layers = newVal;
+        this.setState({
+          canvas_reid_0: canvas_reid_0,
+          dataset_max_num:new_ID
+        }, () => {
+          this.refs.canvasPanel.echoRectangle()
+          message.success(`生成新 id : ${this.state.dataset_max_num}`)
+        });
+
+        e.preventDefault();
+      }
     } else {
       return;
     }
+
+
+  }
+
+  _contextmenu(e) {
+    message.warning('点击右键')
   }
 
   _isDraggingChange(e) {
@@ -1188,12 +1261,12 @@ class UnitTestView extends React.Component {
           id_new: id_new
         };
         this.setState({
-          loading:true
-        }, ()=>{
+          loading: true
+        }, () => {
           _fetch(local_url + updateIDs, params, (res) => {
             this.setState({
               loading: false
-            }, ()=>{
+            }, () => {
               if (res.code == 0) {
                 message.success('更新成功')
                 this.clearCanvas();
@@ -1210,6 +1283,7 @@ class UnitTestView extends React.Component {
     e.preventDefault();
   }
 
+  //批量修改 id
   handleSubmit = e => {
     this.CreateUpdateIDFormManFunform.validateFieldsAndScroll((err, values) => {
       if (err) {
@@ -1217,31 +1291,62 @@ class UnitTestView extends React.Component {
         message.warning('请先填写正确的表单')
       } else {
         let {id} = values
-        // 更新 reid 逻辑
-        console.log(`id 为 ${id}`)
 
         //更新 id
         let newVal = this.refs.canvasPanel.state.canvasRectObj.layers;
         if (!newVal.length) return;
-        newVal.forEach((item, index) => {
-          if (this.rectInLayer[0].labelOpt.idx === item.labelOpt.idx) {
-            item.id = parseInt(id)
-          }
-        })
-        let canvas_reid_0 = deepCopy(this.state.canvas_reid_0)
-        canvas_reid_0.options.layers = newVal;
+        let id_ori = this.rectInLayer[0].id
+
+        let params = {
+          data_id: this.state.data_id,
+          mession_id: this.state.mession_id,
+          user_name: this.state.user_name,
+          id_ori: id_ori,
+          id_new: id
+        };
         this.setState({
-          modal_visible: false,
-          canvas_reid_0: canvas_reid_0
+          loading: true
         }, () => {
-          console.log('提交 modal')
-          document.addEventListener('keydown', this._keypress);
-          this.refs.canvasPanel.echoRectangle()
-        });
+          _fetch(local_url + updateIDs, params, (res) => {
+            this.setState({
+              loading: false,
+              modal_visible: false
+            }, () => {
+              document.addEventListener('keydown', this._keypress);
+              if (res.code == 0) {
+                message.success(`更新成功, id ${id_ori} 改为 ${id}`)
+                this.clearCanvas();
+                this._getImgList();
+              } else {
+                message.error(`更新失败, ${res.message}`)
+              }
+            })
+          })
+        })
+
+
+        // //更新 id
+        // let newVal = this.refs.canvasPanel.state.canvasRectObj.layers;
+        // if (!newVal.length) return;
+        // newVal.forEach((item, index) => {
+        //   if (this.rectInLayer[0].labelOpt.idx === item.labelOpt.idx) {
+        //     item.id = parseInt(id)
+        //   }
+        // })
+        // let canvas_reid_0 = deepCopy(this.state.canvas_reid_0)
+        // canvas_reid_0.options.layers = newVal;
+        // this.setState({
+        //   modal_visible: false,
+        //   canvas_reid_0: canvas_reid_0
+        // }, () => {
+        //   console.log('提交 modal')
+        //   document.addEventListener('keydown', this._keypress);
+        //   this.refs.canvasPanel.echoRectangle()
+        // });
       }
     });
 
-    e.preventDefault();
+    // e.preventDefault();
   }
 
   handleOk = e => {
@@ -1279,6 +1384,15 @@ class UnitTestView extends React.Component {
             width={screen_width / 3}
             drawerStyle={{backgroundColor: '#303336',}}
           >
+            <Row>
+              <Col span={24}>
+                <Tooltip title="当前数据集最大 ID">
+                  <Tag color={'#0AA0AA'}>
+                    {`当前数据集最大 ID : ${this.state.dataset_max_num}`}
+                  </Tag>
+                </Tooltip>
+              </Col>
+            </Row>
             <Row>
               <Col span={24} style={{
                 backgroundColor: '#303336',
@@ -1337,7 +1451,7 @@ class UnitTestView extends React.Component {
                     display: 'flex',
                     justifyContent: 'center'
                   }}>
-                    <Icon className={this.state.wholeVar.currentIndex + 1>= this.state.wholeVar.finished ? 'disabled' : ''} type="right-circle" theme="filled" style={{
+                    <Icon className={this.state.wholeVar.currentIndex + 1 >= this.state.wholeVar.finished ? 'disabled' : ''} type="right-circle" theme="filled" style={{
                       fontSize: '24px',
                       color: '#08c'
                     }} onClick={this.nextPage}/>
@@ -1350,16 +1464,16 @@ class UnitTestView extends React.Component {
                     color: 'white'
                   }}>
                     {this.state.wholeVar.finished === this.state.wholeVar.total ?
-                      `${this.state.wholeVar.currentIndex+1} / ${this.state.wholeVar.finished}`: `${this.state.wholeVar.currentIndex + 1} / ${this.state.wholeVar.finished+1}`
+                      `${this.state.wholeVar.currentIndex + 1} / ${this.state.wholeVar.finished}` : `${this.state.wholeVar.currentIndex + 1} / ${this.state.wholeVar.finished + 1}`
                     }
                   </Col>
                 </Row>
               </Col>
             </Row>
-            {this.CreateChangeIDsFormManFun()}
-            <Button onClick={this.SubmitChangeIDs} type="primary">
-              提交修改
-            </Button>
+            {/*{this.CreateChangeIDsFormManFun()}*/}
+            {/*<Button onClick={this.SubmitChangeIDs} type="primary">*/}
+            {/*  提交修改*/}
+            {/*</Button>*/}
           </Drawer>
           <Col className="anno-r-content" span={24} style={{
             height: '100%',
@@ -1458,7 +1572,11 @@ class UnitTestView extends React.Component {
                   // canvasmouseup={this._mouseup}
                   canvasmousedown={this._mousedown}
                   changeIsDragging={this._isDraggingChange}
-                  canvascontextmenu={this._contextmenu}
+                  // canvascontextmenu={this._contextmenu}
+                  mousemoveRootMap={true}
+                  canvasMouseMove={this._otherCanvasMouseMove}
+                  // TODO 添加 鼠标悬停 映射方法
+
                 >
                   <img id="canvas_img_id" style={{
                     width: this.state.canvas_reid_0.currentImgData.props.domWidth

@@ -94,7 +94,7 @@ export default class CanvasRectComp extends Component{
             this.state.canvasRectObj.c.onmousedown = this.canvasMouseDown;
             this.state.canvasRectObj.c.onmousemove = this.canvasMouseMove;
             // this.state.canvasRectObj.c.onmouseup = this.canvasMouseUp;
-            // this.state.canvasRectObj.c.oncontextmenu = this.canvasContextMenu;
+            this.state.canvasRectObj.c.oncontextmenu = this.canvasContextMenu;
         };
     }
 
@@ -114,6 +114,10 @@ export default class CanvasRectComp extends Component{
     canvasMouseMove(e) {
         if (this.state.drawType === "rect") {
             this.state.canvasRectObj.mousemove(e, this);
+            if (this.props.mousemoveRootMap || false){
+                // console.log(this.state.mouseoverOpts.text)
+                this.props.canvasMouseMove(Number(this.state.mouseoverOpts.text))
+            }
         } else {
             this.canvasRectObj.mousemove_polar(e);
         }
@@ -134,7 +138,10 @@ export default class CanvasRectComp extends Component{
 
     canvasContextMenu(e) {
         // this.$emit("canvascontextmenu", e);
-        this.props.canvascontextmenu(e)
+
+        if (this.props.canvascontextmenu){
+            this.props.canvascontextmenu(e)
+        }
         e.preventDefault();
     }
 
@@ -187,7 +194,7 @@ export default class CanvasRectComp extends Component{
                     zIndex: 99,
                     fontSize:20
                 }}>
-                    {`${this.state.mouseoverOpts.text}`}
+                    {`id:${this.state.mouseoverOpts.text}`}
                 </Tag>
                 <canvas className="canvas_rect" id={this.props.canvas_rect_id} ref="canvas_rect"></canvas>
                 <canvas id="canvas_subline" ref="canvas_subline"></canvas>

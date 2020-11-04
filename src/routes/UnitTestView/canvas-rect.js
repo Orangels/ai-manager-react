@@ -1,3 +1,5 @@
+import { trackerColoreMap, trackerColorMapBGRList } from '../../data/params'
+
 import {
      message as Message
 } from 'antd'
@@ -88,6 +90,40 @@ class rectAngle {
         this.reshow(this.endX, this.endY);
 
     }
+
+    highlightSelectRect = (idArr, that) => {
+        this.ctx.save();
+        this.ctx.setLineDash([5])
+        this.c.style.cursor = "default";
+        this.ctx.lineWidth = 2;
+        this.ctx.strokeStyle = this.lineColor;
+        this.ctx.clearRect(0, 0, this.eleWidth, this.eleHeight)
+        this.ctx.restore();
+        let select_item = this.reshowWithSelectID(idArr)
+
+        if (select_item.length == 0 && that.state.mouseoverOpts.TooltipShow){
+            that.setState({
+                mouseoverOpts:{
+                    TooltipShow: false,
+                    top:0,
+                    left:0,
+                    text:''
+                }
+            })
+        }
+        if (select_item.length !== 0){
+            that.setState({
+                mouseoverOpts:{
+                    TooltipShow: true,
+                    top:select_item[0].y1,
+                    left:select_item[0].x1+2,
+                    text:Number(select_item[0].id)
+                }
+            })
+        }
+
+    }
+
     mousemove = (e, that) => {
         // if(!this.dragging)console.log('mousemove')
         this.endX = e.offsetX;
@@ -122,7 +158,7 @@ class rectAngle {
                     TooltipShow: true,
                     top:this.endY,
                     left:this.endX+2,
-                    text:`id:${select_item[0].id}`
+                    text:Number(select_item[0].id)
                 }
             })
         }
@@ -279,72 +315,130 @@ class rectAngle {
         this.ctx.restore();
         this.reshow(this.endX, this.endY);
     }
+
+    reshowWithSelectID(idArr) {
+        let result = [];
+        // if(!this.dragging)console.log('reshow')
+        let allNotIn = 1;
+        // let layers_reverse = [...this.layers].reverse();
+        // layers_reverse.forEach(item => {
+        this.layers.forEach((item, index) => {
+            this.ctx.beginPath();
+            this.ctx.lineWidth = 2;
+            this.ctx.rect(item.x1, item.y1, item.width, item.height);
+            // this.ctx.strokeStyle = item.strokeStyle;
+            // this.ctx.strokeStyle = trackerColoreMap[index % trackerColoreMap.length];
+            let [b, g, r] = trackerColorMapBGRList[Math.abs(item.id) % trackerColorMapBGRList.length]
+            this.ctx.strokeStyle = `rgb(${r},${g},${b})`;
+
+
+            // if(item.drawType === 'rect'){
+                if (item.id !== -2){
+                    this.render(item); // 鼠标当前所在坐标 只有一个框 时候 才可以拖拽
+                }
+            //
+            // }
+
+            idArr.forEach((id, index)=>{
+                if (item.id == id) {
+                    result.push(item)
+
+                    this.ctx.fillStyle = `rgba(${r},${g},${b},0.7)`;
+                    this.ctx.fill();
+
+                    this.ctx.stroke();
+                    this.drawArc(item)
+
+                }
+            })
+            //
+
+            this.ctx.stroke();
+            this.drawArc(item)
+
+            // if (item.id > 0 && (item.labelOpt.id.indexOf("person") != -1 || item.labelOpt.id.indexOf("body") != -1) ){
+                this.drawText(item.id, item.x1, item.y1, (item.x2-item.x1), this.ctx.strokeStyle)
+            // }
+
+        })
+        // 返回点所在框信息
+        return result
+
+    }
+
     reshow(x, y) {
         let result = [];
         // if(!this.dragging)console.log('reshow')
         let allNotIn = 1;
         // let layers_reverse = [...this.layers].reverse();
         // layers_reverse.forEach(item => {
-        // console.log(this.layers)
-        this.layers.forEach(item => {
-            this.ctx.beginPath();
-            this.ctx.lineWidth = 2;
-            this.ctx.rect(item.x1, item.y1, item.width, item.height);
-            this.ctx.strokeStyle = item.strokeStyle;
 
-            if (x >= (item.x1 - 10) && x <= (item.x1 + 10) && y <= (item.y2 - 10) && y >= (item.y1 + 10)) {
-                // this.resizeLeft(item);
-            } else if (x >= (item.x2 - 10) && x <= (item.x2 + 10) && y <= (item.y2 - 10) && y >= (item.y1 + 10)) {
-                // this.resizeWidth(item);
-            } else if (y >= (item.y1 - 10) && y <= (item.y1 + 10) && x <= (item.x2 - 10) && x >= (item.x1 + 10)) {
-                // this.resizeTop(item);
-            } else if (y >= (item.y2 - 10) && y <= (item.y2 + 10) && x <= (item.x2 - 10) && x >= (item.x1 + 10)) {
-                // this.resizeHeight(item);
-            } else if (x >= (item.x1 - 10) && x <= (item.x1 + 10) && y <= (item.y1 + 10) && y >= (item.y1 - 10)) {
-                if (this.dragging && item.drawType !== 'polar') this.resizeLT(item);
-            } else if (x >= (item.x2 - 10) && x <= (item.x2 + 10) && y <= (item.y2 + 10) && y >= (item.y2 - 10)) {
-                if (this.dragging && item.drawType !== 'polar') this.resizeWH(item);
-            } else if (x >= (item.x1 - 10) && x <= (item.x1 + 10) && y <= (item.y2 + 10) && y >= (item.y2 - 10)) {
-                if (this.dragging && item.drawType !== 'polar') this.resizeLH(item);
-            } else if (x >= (item.x2 - 10) && x <= (item.x2 + 10) && y <= (item.y1 + 10) && y >= (item.y1 - 10)) {
-                if (this.dragging && item.drawType !== 'polar') this.resizeWT(item);
-            }
+        this.layers.forEach((item, index) => {
+                this.ctx.beginPath();
+                this.ctx.lineWidth = 2;
+                this.ctx.rect(item.x1, item.y1, item.width, item.height);
+                // this.ctx.strokeStyle = item.strokeStyle;
+                // this.ctx.strokeStyle = trackerColoreMap[index % trackerColoreMap.length];
+                let [b, g, r] = trackerColorMapBGRList[Math.abs(item.id) % trackerColorMapBGRList.length]
+                this.ctx.strokeStyle = `rgb(${r},${g},${b})`;
 
-            // 如果（鼠标当前坐标在当前矩形框内 && 是调整状态） 变成拖动
-            if (this.ctx.isPointInPath(x, y) && this.dragging) {
-                if(item.drawType === 'rect'){ // 只有矩形框才可以拖
-                    // 只有鼠标当前位置只有一个框的时候才可以拖拽
-                    // let rectInLayer = [];
-                    // this.layers.forEach((item, index)=>{
-                    //     let x_in = x >= item.x1 && x <= item.x2;
-                    //     let y_in = y >= item.y1 && y <= item.y2;
-                    //     if(x_in && y_in){
-                    //         rectInLayer.push(item);
-                    //     }
-                    // })
-                    // if(rectInLayer.length == 1){
-                    // if (item.id > 0 && (item.labelOpt.id.indexOf("person") != -1 || item.labelOpt.id.indexOf("body") != -1) ){
-                        result.push(item)
-                    // }
-                    // console.log(item)
-                    if (item.id !== -2){
-                        this.render(item); // 鼠标当前所在坐标 只有一个框 时候 才可以拖拽
-                    }
-
-                    // }
+                if (x >= (item.x1 - 10) && x <= (item.x1 + 10) && y <= (item.y2 - 10) && y >= (item.y1 + 10)) {
+                    // this.resizeLeft(item);
+                } else if (x >= (item.x2 - 10) && x <= (item.x2 + 10) && y <= (item.y2 - 10) && y >= (item.y1 + 10)) {
+                    // this.resizeWidth(item);
+                } else if (y >= (item.y1 - 10) && y <= (item.y1 + 10) && x <= (item.x2 - 10) && x >= (item.x1 + 10)) {
+                    // this.resizeTop(item);
+                } else if (y >= (item.y2 - 10) && y <= (item.y2 + 10) && x <= (item.x2 - 10) && x >= (item.x1 + 10)) {
+                    // this.resizeHeight(item);
+                } else if (x >= (item.x1 - 10) && x <= (item.x1 + 10) && y <= (item.y1 + 10) && y >= (item.y1 - 10)) {
+                    if (this.dragging && item.drawType !== 'polar') this.resizeLT(item);
+                } else if (x >= (item.x2 - 10) && x <= (item.x2 + 10) && y <= (item.y2 + 10) && y >= (item.y2 - 10)) {
+                    if (this.dragging && item.drawType !== 'polar') this.resizeWH(item);
+                } else if (x >= (item.x1 - 10) && x <= (item.x1 + 10) && y <= (item.y2 + 10) && y >= (item.y2 - 10)) {
+                    if (this.dragging && item.drawType !== 'polar') this.resizeLH(item);
+                } else if (x >= (item.x2 - 10) && x <= (item.x2 + 10) && y <= (item.y1 + 10) && y >= (item.y1 - 10)) {
+                    if (this.dragging && item.drawType !== 'polar') this.resizeWT(item);
                 }
-                allNotIn = 0;
-                this.ctx.fillStyle = "rgba(84,153,224,0.7)";
-                this.ctx.fill();
-            }
-            this.ctx.stroke();
-            this.drawArc(item)
 
-            // if (item.id > 0 && (item.labelOpt.id.indexOf("person") != -1 || item.labelOpt.id.indexOf("body") != -1) ){
-                this.drawText(item.id, item.x1, item.y1, (item.x2-item.x1))
-            // }
+                // 如果（鼠标当前坐标在当前矩形框内 && 是调整状态） 变成拖动
+                if (this.ctx.isPointInPath(x, y) && this.dragging) {
+                    if(item.drawType === 'rect'){ // 只有矩形框才可以拖
+                        // 只有鼠标当前位置只有一个框的时候才可以拖拽
+                        // let rectInLayer = [];
+                        // this.layers.forEach((item, index)=>{
+                        //     let x_in = x >= item.x1 && x <= item.x2;
+                        //     let y_in = y >= item.y1 && y <= item.y2;
+                        //     if(x_in && y_in){
+                        //         rectInLayer.push(item);
+                        //     }
+                        // })
+                        // if(rectInLayer.length == 1){
+                        // if (item.id > 0 && (item.labelOpt.id.indexOf("person") != -1 || item.labelOpt.id.indexOf("body") != -1) ){
+                        result.push(item)
+                        // }
+                        // console.log(item)
+                        if (item.id !== -2){
+                            this.render(item); // 鼠标当前所在坐标 只有一个框 时候 才可以拖拽
+                        }
 
-        })
+                        // }
+                    }
+                    allNotIn = 0;
+                    // this.ctx.fillStyle = "rgba(84,153,224,0.7)";
+                    this.ctx.fillStyle = `rgba(${r},${g},${b},0.7)`;
+                    this.ctx.fill();
+                }
+                this.ctx.stroke();
+                this.drawArc(item)
+
+                // if (item.id > 0 && (item.labelOpt.id.indexOf("person") != -1 || item.labelOpt.id.indexOf("body") != -1) ){
+                this.drawText(item.id, item.x1, item.y1, (item.x2-item.x1), this.ctx.strokeStyle)
+                // }
+
+            })
+
+
+
         // （按下了鼠标 && 可操作状态 && 变成拖动）
         if (this.flag && this.operate < 3 && allNotIn) {
             this.operate = 1
@@ -548,7 +642,13 @@ class rectAngle {
     }
 
     // 文字
-    drawText = (showText, x, y, width) => {
+    drawText = (showText, x, y, width, bgColor='#22AA50') => {
+        if (width > this.eleWidth / 12){
+            width = this.eleWidth / 12
+        }else if (width < this.eleWidth / 18) {
+            width = this.eleWidth / 18
+        }
+
         this.ctx.save();
 
         const size = 0.4*width;
@@ -574,9 +674,9 @@ class rectAngle {
             this.ctx.beginPath();
             this.ctx.lineWidth = 2;
             this.ctx.rect(x-1, y-textHeight, textWidth+2, textHeight);
-            this.ctx.strokeStyle = '#22AA50';
+            this.ctx.strokeStyle = bgColor;
             this.ctx.stroke();
-            this.ctx.fillStyle = '#22AA50';
+            this.ctx.fillStyle = bgColor;
             this.ctx.fill();
 
             this.ctx.fillStyle = "rgba(255, 255, 255, 1)";

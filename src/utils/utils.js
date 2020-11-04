@@ -569,4 +569,15 @@ export let dateFormat = function (timestamp, formats) {
   });
 };
 
-
+export let duplicates = (arr) => {
+  let res = arr.filter((value, index)=>{
+    let a = index*1+1;
+    let includIndex = arr.indexOf(value,a);
+    if(includIndex != -1){
+      return value;
+    }
+  })
+  let re = new Set(res);
+  // return [...re];
+  return re
+}
