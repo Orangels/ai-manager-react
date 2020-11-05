@@ -932,6 +932,7 @@ class UnitTestView extends React.Component {
     let imgHeight = canvas_params.currentImgData.props.height;
     for (let i = 0; i < opts.length; i++) {
       let idx = opts[i].key + "_" + Math.ceil(Math.random() * 10e10);
+      let rect_id = opts[i].index || i
       if (opts[i].tag_tool === "bndbox") {
         let x1 = (opts[i].coordinate[0].x * domWidth) / imgWidth;
         let x2 = (opts[i].coordinate[1].x * domWidth) / imgWidth;
@@ -1221,6 +1222,8 @@ class UnitTestView extends React.Component {
           dataset_max_num:new_ID
         }, () => {
           this.refs.canvasPanel.echoRectangle()
+          // console.log(this.state.canvas_reid_0)
+          // console.log(this.refs.canvasPanel.state.canvasRectObj.layers)
           message.success(`生成新 id : ${this.state.dataset_max_num}`)
         });
 
@@ -1297,32 +1300,50 @@ class UnitTestView extends React.Component {
         if (!newVal.length) return;
         let id_ori = this.rectInLayer[0].id
 
-        let params = {
-          data_id: this.state.data_id,
-          mession_id: this.state.mession_id,
-          user_name: this.state.user_name,
-          id_ori: id_ori,
-          id_new: id
-        };
-        this.setState({
-          loading: true
-        }, () => {
-          _fetch(local_url + updateIDs, params, (res) => {
-            this.setState({
-              loading: false,
-              modal_visible: false
-            }, () => {
-              document.addEventListener('keydown', this._keypress);
-              if (res.code == 0) {
-                message.success(`更新成功, id ${id_ori} 改为 ${id}`)
-                this.clearCanvas();
-                this._getImgList();
-              } else {
-                message.error(`更新失败, ${res.message}`)
-              }
-            })
-          })
+        newVal.forEach((item, index) => {
+          if (this.rectInLayer[0].labelOpt.idx === item.labelOpt.idx) {
+            item.id = parseInt(id)
+          }
         })
+
+        let canvas_reid_0 = deepCopy(this.state.canvas_reid_0)
+        canvas_reid_0.options.layers = newVal;
+
+        this.setState({
+          modal_visible: false,
+          canvas_reid_0: canvas_reid_0
+        }, () => {
+          console.log('提交 modal')
+          document.addEventListener('keydown', this._keypress);
+          this.refs.canvasPanel.echoRectangle()
+        });
+
+        // let params = {
+        //   data_id: this.state.data_id,
+        //   mession_id: this.state.mession_id,
+        //   user_name: this.state.user_name,
+        //   id_ori: id_ori,
+        //   id_new: id
+        // };
+        // this.setState({
+        //   loading: true
+        // }, () => {
+        //   _fetch(local_url + updateIDs, params, (res) => {
+        //     this.setState({
+        //       loading: false,
+        //       modal_visible: false
+        //     }, () => {
+        //       document.addEventListener('keydown', this._keypress);
+        //       if (res.code == 0) {
+        //         message.success(`更新成功, id ${id_ori} 改为 ${id}`)
+        //         this.clearCanvas();
+        //         this._getImgList();
+        //       } else {
+        //         message.error(`更新失败, ${res.message}`)
+        //       }
+        //     })
+        //   })
+        // })
 
 
         // //更新 id
@@ -1426,9 +1447,18 @@ class UnitTestView extends React.Component {
                     justifyContent: 'center',
                     color: 'white'
                   }}>
-                    {`${this.state.wholeVar.finished} /  ${this.state.wholeVar.total}`}
+                    {`${this.state.wholeVar.finished} (已标注页数) /  ${this.state.wholeVar.total} (总页数)`}
                   </Col>
                 </Row>
+                {/*<Row type="flex" justify="center">*/}
+                {/*  <Col span={22} style={{*/}
+                {/*    display: 'flex',*/}
+                {/*    justifyContent: 'center',*/}
+                {/*    color: 'white'*/}
+                {/*  }}>*/}
+                {/*    {"已标注页数 / 总页数"}*/}
+                {/*  </Col>*/}
+                {/*</Row>*/}
                 <Row type="flex" justify="center">
                   <Col span={22} type="flex" justify="center" style={{
                     display: 'flex',
@@ -1464,10 +1494,19 @@ class UnitTestView extends React.Component {
                     color: 'white'
                   }}>
                     {this.state.wholeVar.finished === this.state.wholeVar.total ?
-                      `${this.state.wholeVar.currentIndex + 1} / ${this.state.wholeVar.finished}` : `${this.state.wholeVar.currentIndex + 1} / ${this.state.wholeVar.finished + 1}`
+                      `${this.state.wholeVar.currentIndex + 1} (当前页数) / ${this.state.wholeVar.finished} (已标注页数)` : `${this.state.wholeVar.currentIndex + 1} (当前页数) / ${this.state.wholeVar.finished + 1} (已标注页数)`
                     }
                   </Col>
                 </Row>
+                {/*<Row type="flex" justify="center">*/}
+                {/*  <Col span={22} style={{*/}
+                {/*    display: 'flex',*/}
+                {/*    justifyContent: 'center',*/}
+                {/*    color: 'white'*/}
+                {/*  }}>*/}
+                {/*    {"当前页数 / 已标注页数"}*/}
+                {/*  </Col>*/}
+                {/*</Row>*/}
               </Col>
             </Row>
             {/*{this.CreateChangeIDsFormManFun()}*/}
