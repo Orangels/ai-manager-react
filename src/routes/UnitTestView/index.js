@@ -54,6 +54,7 @@ class UnitTestView extends React.Component {
     super(props);
     // 初始状态
     this.state = {
+      cacheImgSrcs:[''],
       dataset_max_num: 100,
       loading: false,
       modal_visible: false,
@@ -762,6 +763,8 @@ class UnitTestView extends React.Component {
         let lastPerImgDataBot_picList = res.pic_list[1];
         let lastPerImgDataCenter_picList = res.pic_list[2];
 
+        let cacheImgList = res.pic_list[4]
+
         let img_list = [lastPerImgDataTop_picList, lastPerImgDataBot_picList, lastPerImgDataCenter_picList, picList]
         let img_datas = [{}, {}, {}, {}]
         for (let i = 0; i < img_datas.length; i++) {
@@ -798,16 +801,22 @@ class UnitTestView extends React.Component {
           canvas_last_reid_bot: canvas_last_reid_bot,
           canvas_last_reid_center: canvas_last_reid_center,
           wholeVar: wholeVar,
-          dataset_max_num: res.maxID || 10000
+          dataset_max_num: res.maxID || 10000,
+          cacheImgSrcs: [cacheImgList.path]
         }, () => {
           console.log(this.state.canvas_reid_0.currentImgData)
           console.log(this.state.canvas_last_reid_top.currentImgData)
           console.log(this.state.canvas_last_reid_bot.currentImgData)
           console.log(this.state.canvas_last_reid_center.currentImgData)
+
           this._initCanvasDom('init');
           // setTimeout(() => {
           //   this.echoDraw()
           // }, 500);
+
+          // setTimeout(()=>{
+          //   this._initCanvasDom('init');
+          // }, 400)
 
           document.removeEventListener('keydown', this._keypress);
           if (this.loadingTimer){
@@ -1673,6 +1682,7 @@ class UnitTestView extends React.Component {
                   <img id="canvas_img_id" style={{
                     width: this.state.canvas_reid_0.currentImgData.props.domWidth
                   }} src={`//${this.state.canvas_reid_0.currentImgData.props.src}`}/>
+                  <img className={'cacheImg'} src={`//${this.state.cacheImgSrcs[0]}`} width={0} style={{position:"absolute", bottom:0}}/>
                 </CanvasRectComp>
               </Col>
             </Row>
