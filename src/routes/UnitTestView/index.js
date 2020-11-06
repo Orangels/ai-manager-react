@@ -396,6 +396,7 @@ class UnitTestView extends React.Component {
   };
 
   drawerOnClose() {
+    console.log('!!!!!!!!!!!!!!')
     this.setState({
       drawer_visible: false,
     }, () => {
@@ -432,15 +433,21 @@ class UnitTestView extends React.Component {
       if (flag === 'save') {
         console.log('保存, 下一张')
 
-        //检测是否有重复 id 及 -1(未标id)
+        //检测是否有重复 id 不包括 -1
         let tempLayers = this.refs.canvasPanel.state.canvasRectObj.layers;
         let unMarkedIDs = new Set()
-        let idArr = tempLayers.map((value, index) => {
-          if (value.id == -1) {
-            unMarkedIDs.add(value.id)
+        let idArr = []
+        for (let i = 0; i < tempLayers.length; i++){
+          if (tempLayers[i].id !== -1){
+            idArr.push(tempLayers[i].id)
           }
-          return value.id
-        })
+        }
+        // let idArr = tempLayers.map((value, index) => {
+        //   // if (value.id == -1) {
+        //   //   unMarkedIDs.add(value.id)
+        //   // }
+        //   return value.id
+        // })
 
         // 返回值是 Set
         let repeatIDs = duplicates(idArr)
@@ -448,7 +455,8 @@ class UnitTestView extends React.Component {
 
 
         if (repeatIDs.length) {
-          message.error('有重复 id 或 未标注 id, 请修改')
+          // message.error('有重复 id 或 未标注 id, 请修改')
+          message.error('有重复 id , 请修改')
           this.refs.canvasPanel.state.canvasRectObj.highlightSelectRect(repeatIDs, this.refs.canvasPanel)
         } else {
           this.saveInfo(
@@ -578,7 +586,7 @@ class UnitTestView extends React.Component {
 
         } else {
           message.error('保存数据失败')
-          document.addEventListener('keydown', this._keypress);
+          // document.addEventListener('keydown', this._keypress);
         }
       })
     })
@@ -809,7 +817,7 @@ class UnitTestView extends React.Component {
             this.setState({
               loading: false
             }, () => {
-              window.addEventListener('keydown', this._keypress)
+              document.addEventListener('keydown', this._keypress)
             });
           }, 700)
           if (this.state.loading != true) {
@@ -1081,7 +1089,7 @@ class UnitTestView extends React.Component {
 
       fn()
       // document.addEventListener('keypress', this._keypress);
-      document.addEventListener('keydown', this._keypress);
+      // document.addEventListener('keydown', this._keypress);
 
       // this._initCanvasDom('init');
     })
@@ -1235,6 +1243,7 @@ class UnitTestView extends React.Component {
 
       //鼠标左键
       if (e.button == 0) {
+        console.log('鼠标左键')
         this.setState({
           modal_visible: true
         }, () => {

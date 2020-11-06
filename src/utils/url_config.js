@@ -7,7 +7,7 @@ export let HOST = function () {
         url = 'http://192.168.88.221:8000'
     }
     else if (url.indexOf('localhost') !== -1 || url.indexOf('127.0.0.1') !== -1){
-        url = 'http://127.0.0.1:8000'
+        url = 'http://127.0.0.1:9000'
         // url = 'http://127.0.0.1:9000'
         // url = 'http://10.11.149.225:8000'
     }else {

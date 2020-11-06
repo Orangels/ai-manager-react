@@ -668,7 +668,7 @@ class rectAngle {
         //   ctx.fillStyle = "rgba(06, 85, 128, 0.8)";
         // }
 
-        if (showText !== -1){
+        // if (showText !== -1){
             let textWidth = this.ctx.measureText("id:"+showText.toString()).width;
             let textHeight = this.ctx.measureText("1").width * 2;
             this.ctx.beginPath();
@@ -687,7 +687,7 @@ class rectAngle {
             this.ctx.fillText("id:"+showText.toString(), x, y);
 
             this.ctx.restore();
-        }
+        // }
     }
 
 }
