@@ -49,11 +49,11 @@ class rectAngle {
         this.layers_polar = []; // 极点坐标 ： [{x:10, y:2},{x:10, y:2},{x:10, y:2},{x:10, y:2}]
     }
     $init(id, eleWidth, eleHeight) {
-        console.log(id)
+        // console.log(id)
         this.eleWidth = eleWidth;
         this.eleHeight = eleHeight;
         this.c = document.getElementById(id);
-        console.log(this.c)
+        // console.log(this.c)
         this.ctx = this.c.getContext("2d");
         this.c.width = eleWidth;
         this.c.height = eleHeight;

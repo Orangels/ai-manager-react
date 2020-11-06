@@ -408,83 +408,91 @@ class UnitTestView extends React.Component {
   }
 
   prevPage() {
-    if (this.state.wholeVar.currentIndex < 1) return;
-    let wholeVar = deepCopy(this.state.wholeVar)
-    wholeVar.currentIndex -= 1; // 请求下一页
-    this.setState({
-      wholeVar
-    }, () => {
-      this.clearCanvas();
-      this._getImgList();
-    })
+
+    if (!this.state.loading){
+      if (this.state.wholeVar.currentIndex < 1) return;
+      let wholeVar = deepCopy(this.state.wholeVar)
+      wholeVar.currentIndex -= 1; // 请求下一页
+      this.setState({
+        wholeVar
+      }, () => {
+        this.clearCanvas();
+        this._getImgList();
+      })
+    }
+
   }
 
   nextPage(flag = 'next') {
     // 如果是当前表主页面：
     // 是从收藏按钮跳转进来的（this.is_collection == true): 如果当前是取消收藏状态，那么下一次请求数据仍然请求当前页码；
     // 如果是非收藏按钮跳转进来的 ： 那么请求下一次数据页码加一
-    if (flag === 'save') {
-      console.log('保存, 下一张')
 
-      //检测是否有重复 id 及 -1(未标id)
-      let tempLayers = this.refs.canvasPanel.state.canvasRectObj.layers;
-      let unMarkedIDs = new Set()
-      let idArr = tempLayers.map((value, index) => {
-        if (value.id == -1) {
-          unMarkedIDs.add(value.id)
-        }
-        return value.id
-      })
+    if (!this.state.loading){
+      if (flag === 'save') {
+        console.log('保存, 下一张')
 
-      // 返回值是 Set
-      let repeatIDs = duplicates(idArr)
-      repeatIDs = [...new Set([...repeatIDs, ...unMarkedIDs])]
-
-
-      if (repeatIDs.length) {
-        message.error('有重复 id 或 未标注 id, 请修改')
-        this.refs.canvasPanel.state.canvasRectObj.highlightSelectRect(repeatIDs, this.refs.canvasPanel)
-      } else {
-        this.saveInfo(
-          (res) => {
-            // console.log(this.wholeVar)
-            if (this.state.wholeVar.currentIndex > (this.state.wholeVar.finished + 1)) return;
-            if (!(this.is_collection && !this.canvas_reid_0.currentImgData.props.isCollection)) {
-              this.state.wholeVar.currentIndex += 1; // 请求下一页
-              if (this.state.wholeVar.currentIndex > this.state.wholeVar.total) {
-                // this.$router.push({ path: "/task-center"});
-                return;
-              }
-            }
-            this.clearCanvas();
-            this._getImgList();
+        //检测是否有重复 id 及 -1(未标id)
+        let tempLayers = this.refs.canvasPanel.state.canvasRectObj.layers;
+        let unMarkedIDs = new Set()
+        let idArr = tempLayers.map((value, index) => {
+          if (value.id == -1) {
+            unMarkedIDs.add(value.id)
           }
-        )
-      }
-    } else {
-      if (this.state.wholeVar.currentIndex < this.state.wholeVar.finished) {
-
-        let wholeVar = deepCopy(this.state.wholeVar)
-        wholeVar.currentIndex += 1; // 请求下一页
-
-        if (this.state.wholeVar.currentIndex > this.state.wholeVar.finished) return;
-        if (!(this.state.is_collection && !this.state.currentImgData.props.isCollection)) {
-          if (wholeVar.currentIndex > wholeVar.total) {
-            // this.$router.push({ path: "/task-center"});
-            message.info("已经是最后一张了")
-            return;
-          }
-        }
-
-        this.setState({
-          wholeVar: wholeVar
-        }, () => {
-          this.clearCanvas();
-          this._getImgList();
+          return value.id
         })
 
+        // 返回值是 Set
+        let repeatIDs = duplicates(idArr)
+        repeatIDs = [...new Set([...repeatIDs, ...unMarkedIDs])]
+
+
+        if (repeatIDs.length) {
+          message.error('有重复 id 或 未标注 id, 请修改')
+          this.refs.canvasPanel.state.canvasRectObj.highlightSelectRect(repeatIDs, this.refs.canvasPanel)
+        } else {
+          this.saveInfo(
+            (res) => {
+              // console.log(this.wholeVar)
+              if (this.state.wholeVar.currentIndex > (this.state.wholeVar.finished + 1)) return;
+              if (!(this.is_collection && !this.canvas_reid_0.currentImgData.props.isCollection)) {
+                this.state.wholeVar.currentIndex += 1; // 请求下一页
+                if (this.state.wholeVar.currentIndex > this.state.wholeVar.total) {
+                  // this.$router.push({ path: "/task-center"});
+                  return;
+                }
+              }
+              this.clearCanvas();
+              this._getImgList();
+            }
+          )
+        }
+      } else {
+        if (this.state.wholeVar.currentIndex < this.state.wholeVar.finished) {
+
+          let wholeVar = deepCopy(this.state.wholeVar)
+          wholeVar.currentIndex += 1; // 请求下一页
+
+          if (this.state.wholeVar.currentIndex > this.state.wholeVar.finished) return;
+          if (!(this.state.is_collection && !this.state.currentImgData.props.isCollection)) {
+            if (wholeVar.currentIndex > wholeVar.total) {
+              // this.$router.push({ path: "/task-center"});
+              message.info("已经是最后一张了")
+              return;
+            }
+          }
+
+          this.setState({
+            wholeVar: wholeVar
+          }, () => {
+            this.clearCanvas();
+            this._getImgList();
+          })
+
+        }
       }
     }
+
   }
 
   // 保存
@@ -554,13 +562,25 @@ class UnitTestView extends React.Component {
       maxID: this.state.dataset_max_num,
     };
     console.log(params)
-    _fetch(local_url + markMgtDataReID, params, (res) => {
-      if (res.code == 0) {
-        if (callback) callback();
+    this.setState({
+      loading: true
+    }, () => {
 
-      } else {
-        message.error('保存数据失败')
-      }
+      //移除监听事件在 getImgList 中做
+      // document.removeEventListener('keydown', this._keypress);
+
+      _fetch(local_url + markMgtDataReID, params, (res) => {
+
+        if (res.code == 0) {
+          message.success('保存成功')
+          console.log(res)
+          if (callback) callback();
+
+        } else {
+          message.error('保存数据失败')
+          document.addEventListener('keydown', this._keypress);
+        }
+      })
     })
   }
 
@@ -647,7 +667,7 @@ class UnitTestView extends React.Component {
       canvas_last_reid_top,
       canvas_last_reid_bot,
       canvas_last_reid_center
-    }, ()=>{
+    }, () => {
 
     })
   }
@@ -777,10 +797,34 @@ class UnitTestView extends React.Component {
           console.log(this.state.canvas_last_reid_bot.currentImgData)
           console.log(this.state.canvas_last_reid_center.currentImgData)
           this._initCanvasDom('init');
-          setTimeout(() => {
-            this.echoDraw()
-          }, 500);
+          // setTimeout(() => {
+          //   this.echoDraw()
+          // }, 500);
 
+          document.removeEventListener('keydown', this._keypress);
+          if (this.loadingTimer){
+            clearTimeout(this.loadingTimer)
+          }
+          this.loadingTimer = setTimeout(() => {
+            this.setState({
+              loading: false
+            }, () => {
+              window.addEventListener('keydown', this._keypress)
+            });
+          }, 700)
+          if (this.state.loading != true) {
+            this.setState({
+              loading: true
+            }, () => {
+              setTimeout(() => {
+                this.echoDraw()
+              }, 500);
+            })
+          } else {
+            setTimeout(() => {
+              this.echoDraw()
+            }, 500);
+          }
         })
       } else {
         message.warning("照片数据查询失败!");
@@ -1219,7 +1263,7 @@ class UnitTestView extends React.Component {
         canvas_reid_0.options.layers = newVal;
         this.setState({
           canvas_reid_0: canvas_reid_0,
-          dataset_max_num:new_ID
+          dataset_max_num: new_ID
         }, () => {
           this.refs.canvasPanel.echoRectangle()
           // console.log(this.state.canvas_reid_0)
