@@ -677,7 +677,7 @@ class UnitTestView extends React.Component {
       canvas_last_reid_bot,
       canvas_last_reid_center
     }, () => {
-
+      console.log('加载图片完成')
     })
   }
 
@@ -729,8 +729,11 @@ class UnitTestView extends React.Component {
     return params
   }
 
+  /**
+   *flag 1: 初次预加载, 0: 正常加载
+  */
   // 获取照片数据
-  _getImgList() {
+  _getImgList(flag=0) {
     let cache_num = 0
     let params = {
       personal_mession_id: this.state.task_id, // 个人任务id
@@ -809,7 +812,14 @@ class UnitTestView extends React.Component {
           console.log(this.state.canvas_last_reid_bot.currentImgData)
           console.log(this.state.canvas_last_reid_center.currentImgData)
 
+          if (flag === 1){
+            setTimeout(() => {
+              this._initCanvasDom('init');
+            }, 400)
+          }
+
           this._initCanvasDom('init');
+
           // setTimeout(() => {
           //   this.echoDraw()
           // }, 500);
@@ -1093,7 +1103,7 @@ class UnitTestView extends React.Component {
 
       async function fn() {
         await _this._getTemplate();
-        await _this._getImgList();
+        await _this._getImgList(1);
       }
 
       fn()

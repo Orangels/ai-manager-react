@@ -4,7 +4,7 @@
 export let HOST = function () {
     let url = window.location.origin
     if (url.indexOf("192.168.88") !== -1 ){
-        url = 'http://192.168.88.221:8000'
+        url = 'http://192.168.88.221:9000'
     }
     else if (url.indexOf('localhost') !== -1 || url.indexOf('127.0.0.1') !== -1){
         url = 'http://127.0.0.1:9000'
