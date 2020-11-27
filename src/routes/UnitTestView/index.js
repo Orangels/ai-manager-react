@@ -513,10 +513,11 @@ class UnitTestView extends React.Component {
 
         // 返回值是 Set
         let repeatIDs = duplicates(idArr)
+        console.log(repeatIDs)
         repeatIDs = [...new Set([...repeatIDs, ...unMarkedIDs])]
 
 
-        if (repeatIDs.length) {
+        if ((repeatIDs.length == 1 && repeatIDs.indexOf(-1) == -1) || (repeatIDs.length > 1 )) {
           // message.error('有重复 id 或 未标注 id, 请修改')
           message.error('有重复 id , 请修改')
           this.refs.canvasPanel.state.canvasRectObj.highlightSelectRect(repeatIDs, this.refs.canvasPanel)

@@ -569,6 +569,7 @@ export let dateFormat = function (timestamp, formats) {
   });
 };
 
+// 返回重复元素
 export let duplicates = (arr) => {
   let res = arr.filter((value, index)=>{
     let a = index*1+1;
