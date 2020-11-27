@@ -1480,6 +1480,8 @@ class UnitTestView extends React.Component {
       ))
     }
 
+    let current_img_string_arr = this.state.canvas_reid_0.currentImgData.props.src.split('/')
+    let current_img_name = current_img_string_arr[current_img_string_arr.length-1]
 
     return (
       <Spin spinning={this.state.loading}>
@@ -1502,13 +1504,18 @@ class UnitTestView extends React.Component {
             width={screen_width / 3}
             drawerStyle={{backgroundColor: '#303336',}}
           >
-            <Row>
-              <Col span={24}>
+            <Row type="flex" justify="space-between">
+              <Col span={8}>
                 <Tooltip title="当前数据集最大 ID">
                   <Tag color={'#0AA0AA'}>
                     {`当前数据集最大 ID : ${this.state.dataset_max_num}`}
                   </Tag>
                 </Tooltip>
+              </Col>
+              <Col span={8}>
+                <Tag color={'#0AA0AA'}>
+                  {`${current_img_name}`}
+                </Tag>
               </Col>
             </Row>
             <Row>
