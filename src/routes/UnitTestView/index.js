@@ -55,6 +55,7 @@ class UnitTestView extends React.Component {
     super(props);
     // 初始状态
     this.state = {
+      select_Reid:'',
       cacheImgSrcs:[''],
       dataset_max_num: 100,
       loading: false,
@@ -1326,7 +1327,8 @@ class UnitTestView extends React.Component {
       if (e.button == 0) {
         console.log('鼠标左键')
         this.setState({
-          modal_visible: true
+          modal_visible: true,
+          select_Reid: this.rectInLayer[0].id
         }, () => {
           //显示 modal 时移除键盘监听, 取消和确定时添加 键盘监听
           document.removeEventListener('keydown', this._keypress);
@@ -1533,7 +1535,20 @@ class UnitTestView extends React.Component {
     let current_img_name = current_img_string_arr[current_img_string_arr.length-1]
 
     let defaultSelectRects = []
-    let canvas_reid_0_layersTemp = this.state.canvas_reid_0.layersTemp.map((value, index)=>{
+
+    let canvas_reid_0_layersTemp = deepCopy(this.state.canvas_reid_0.layersTemp)
+
+    canvas_reid_0_layersTemp.sort((x,y)=>{
+      if (x.id > y.id){
+        return 1
+      }else {
+        return -1
+      }
+    })
+
+    console.log(canvas_reid_0_layersTemp)
+
+    canvas_reid_0_layersTemp = canvas_reid_0_layersTemp.map((value, index)=>{
       defaultSelectRects.push(value.labelOpt.idx)
       return (
         <Option value={value.labelOpt.idx}>
@@ -1548,7 +1563,7 @@ class UnitTestView extends React.Component {
       <Spin spinning={this.state.loading}>
         <Row className="UnitTestView">
           <Modal
-            title="ID"
+            title={`ID: ${this.state.select_Reid}`}
             visible={this.state.modal_visible}
             onOk={this.handleOk}
             onCancel={this.handleCancel}
