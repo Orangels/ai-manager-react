@@ -303,7 +303,8 @@ class UnitTestView extends React.Component {
                 initialValue: "",
                 rules: [
                   {
-                    pattern: /^\d+$/,
+                    // pattern: /^\d+$/,
+                    pattern: /^((\d+)|(-1))$/,
                     required: true,
                     message: '请输入正确的id (数字)'
                   }
@@ -434,15 +435,16 @@ class UnitTestView extends React.Component {
       if (flag === 'save') {
         console.log('保存, 下一张')
 
-        //检测是否有重复 id 不包括 -1
+        //检测是否有重复 id 包括 -1
         let tempLayers = this.refs.canvasPanel.state.canvasRectObj.layers;
         let unMarkedIDs = new Set()
         let idArr = []
         for (let i = 0; i < tempLayers.length; i++){
-          if (tempLayers[i].id !== -1){
+          // if (tempLayers[i].id !== -1){
             idArr.push(tempLayers[i].id)
-          }
+          // }
         }
+
         // let idArr = tempLayers.map((value, index) => {
         //   // if (value.id == -1) {
         //   //   unMarkedIDs.add(value.id)
