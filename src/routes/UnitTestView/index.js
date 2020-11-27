@@ -16,6 +16,7 @@ import CanvasRectComp from './CanvasRectComp.js'
 
 // const CanvasRectComp = LoadableComponent(() => import('./CanvasRectComp.js'))
 
+const { Option } = Select;
 
 let local_url = HOST()
 let last_2p_sapn = 10
@@ -244,6 +245,7 @@ class UnitTestView extends React.Component {
     };
 
     this.drawerOnClose = this.drawerOnClose.bind(this)
+    this.jumpImgChange = this.jumpImgChange.bind(this)
 
     this._getHerfRouterParams = this._getHerfRouterParams.bind(this)
     this._getImgList = this._getImgList.bind(this)
@@ -387,6 +389,17 @@ class UnitTestView extends React.Component {
     })
 
     return <CreateFormMan/>
+  }
+
+  jumpImgChange(value){
+    let wholeVarTmp = deepCopy(this.state.wholeVar)
+    wholeVarTmp.currentIndex = value
+    this.setState({
+      wholeVar: wholeVarTmp
+    }, ()=>{
+      this.clearCanvas();
+      this._getImgList();
+    })
   }
 
   showDrawer = () => {
@@ -1458,6 +1471,16 @@ class UnitTestView extends React.Component {
   };
 
   render() {
+    let Select_options = []
+    for (let i = 0; i <= this.state.wholeVar.finished; i++){
+      Select_options.push((
+        <Option value={i}>
+          {i}
+        </Option>
+      ))
+    }
+
+
     return (
       <Spin spinning={this.state.loading}>
         <Row className="UnitTestView">
@@ -1568,7 +1591,7 @@ class UnitTestView extends React.Component {
                     color: 'white'
                   }}>
                     {this.state.wholeVar.finished === this.state.wholeVar.total ?
-                      `${this.state.wholeVar.currentIndex + 1} (当前页数) / ${this.state.wholeVar.finished} (已标注页数)` : `${this.state.wholeVar.currentIndex + 1} (当前页数) / ${this.state.wholeVar.finished + 1} (已标注页数)`
+                      `${this.state.wholeVar.currentIndex + 1} (当前页数) / ${this.state.wholeVar.finished} (已标注页数)` : `${this.state.wholeVar.currentIndex + 1} (当前页数) / ${this.state.wholeVar.finished + 1} (标注页数)`
                     }
                   </Col>
                 </Row>
@@ -1587,6 +1610,11 @@ class UnitTestView extends React.Component {
             {/*<Button onClick={this.SubmitChangeIDs} type="primary">*/}
             {/*  提交修改*/}
             {/*</Button>*/}
+            <Row>
+              <Select placeholder={"跳转页数"} style={{ width: 120 }} onChange={this.jumpImgChange}>
+                {Select_options}
+              </Select>
+            </Row>
           </Drawer>
           <Col className="anno-r-content" span={24} style={{
             height: '100%',
