@@ -246,6 +246,8 @@ class UnitTestView extends React.Component {
 
     this.drawerOnClose = this.drawerOnClose.bind(this)
     this.jumpImgChange = this.jumpImgChange.bind(this)
+    this.labelChange = this.labelChange.bind(this)
+    this.selectAll = this.selectAll.bind(this)
 
     this._getHerfRouterParams = this._getHerfRouterParams.bind(this)
     this._getImgList = this._getImgList.bind(this)
@@ -389,6 +391,49 @@ class UnitTestView extends React.Component {
     })
 
     return <CreateFormMan/>
+  }
+
+  selectAll(e){
+    let layers = [];
+    for (let i = 0; i < this.state.canvas_reid_0.layersTemp.length; i++) {
+      layers.push(this.state.canvas_reid_0.layersTemp[i]);
+    }
+
+    let canvas_reid_0_tmp = deepCopy(this.state.canvas_reid_0)
+    canvas_reid_0_tmp.options.layers = layers
+    this.setState({
+      canvas_reid_0: canvas_reid_0_tmp
+    }, ()=>{
+      this.refs.canvasPanel.clearCanvas();
+      this.refs.canvasPanel.echoRectangle();
+    })
+  }
+
+  // 下拉labelOption change
+  labelChange(e) {
+    // console.log(e)
+    // console.log(this.labelCreated)
+    // let optionTmp = this.labelCreated.option.filter((option, index)=>{
+    //     return e.indexOf(option.value)
+    // })
+
+    this.checked = true
+
+    let layers = [];
+    for (let i = 0; i < this.state.canvas_reid_0.layersTemp.length; i++) {
+      if (e.indexOf(this.state.canvas_reid_0.layersTemp[i].labelOpt.idx) >= 0) {
+        layers.push(this.state.canvas_reid_0.layersTemp[i]);
+      }
+    }
+
+    let canvas_reid_0_tmp = deepCopy(this.state.canvas_reid_0)
+    canvas_reid_0_tmp.options.layers = layers
+    this.setState({
+      canvas_reid_0: canvas_reid_0_tmp
+    }, ()=>{
+      this.refs.canvasPanel.clearCanvas();
+      this.refs.canvasPanel.echoRectangle();
+    })
   }
 
   jumpImgChange(value){
@@ -1076,7 +1121,9 @@ class UnitTestView extends React.Component {
       labelCreated.value.push(idx); // 添加下拉选项
       num += 1;
     }
-    let layersTemp = JSON.parse(JSON.stringify(layers));
+    // let layersTemp = JSON.parse(JSON.stringify(layers));
+
+    canvas_params.layersTemp = JSON.parse(JSON.stringify(layers));
 
     canvas_params.options.layers = deepCopy(JSON.parse(JSON.stringify(layers)))
 
@@ -1304,6 +1351,7 @@ class UnitTestView extends React.Component {
         })
         let canvas_reid_0 = deepCopy(this.state.canvas_reid_0)
         canvas_reid_0.options.layers = newVal;
+        canvas_reid_0.layersTemp = newVal
         this.setState({
           canvas_reid_0: canvas_reid_0,
           dataset_max_num: new_ID
@@ -1395,6 +1443,7 @@ class UnitTestView extends React.Component {
 
         let canvas_reid_0 = deepCopy(this.state.canvas_reid_0)
         canvas_reid_0.options.layers = newVal;
+        canvas_reid_0.layersTemp = newVal
 
         this.setState({
           modal_visible: false,
@@ -1482,6 +1531,18 @@ class UnitTestView extends React.Component {
 
     let current_img_string_arr = this.state.canvas_reid_0.currentImgData.props.src.split('/')
     let current_img_name = current_img_string_arr[current_img_string_arr.length-1]
+
+    let defaultSelectRects = []
+    let canvas_reid_0_layersTemp = this.state.canvas_reid_0.layersTemp.map((value, index)=>{
+      defaultSelectRects.push(value.labelOpt.idx)
+      return (
+        <Option value={value.labelOpt.idx}>
+          {`id : ${value.id}`}
+        </Option>
+      )
+    })
+
+
 
     return (
       <Spin spinning={this.state.loading}>
@@ -1617,10 +1678,23 @@ class UnitTestView extends React.Component {
             {/*<Button onClick={this.SubmitChangeIDs} type="primary">*/}
             {/*  提交修改*/}
             {/*</Button>*/}
-            <Row>
+            <Row style={{marginTop:20}}>
               <Select placeholder={"跳转页数"} style={{ width: 120 }} onChange={this.jumpImgChange}>
                 {Select_options}
               </Select>
+            </Row>
+            <Row gutter={16} type="flex" justify="space-between" style={{marginTop:20}}>
+              <Col span={20}>
+                <Select defaultValue={defaultSelectRects}
+                  style={{ width: 200 }} mode="multiple" maxTagCount={1} onChange={this.labelChange} >
+                  {canvas_reid_0_layersTemp}
+                </Select>
+              </Col>
+              <Col span={4}>
+                <Button type="primary" onClick={this.selectAll}>
+                  全选
+                </Button>
+              </Col>
             </Row>
           </Drawer>
           <Col className="anno-r-content" span={24} style={{

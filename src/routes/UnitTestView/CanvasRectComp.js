@@ -167,6 +167,11 @@ export default class CanvasRectComp extends Component{
         this.state.canvasRectObj.clear();
     }
 
+    reshowCanvas() {
+        this.state.canvasRectObj.layers = JSON.parse(JSON.stringify(this.state.layers));
+        this.state.canvasRectObj.reshow();
+    }
+
     // 开始拖拽-- 划线装态
     startCreate(flag) {
         this.state.canvasRectObj.dragging = flag; // false:划线状态; true:拖拽状态
