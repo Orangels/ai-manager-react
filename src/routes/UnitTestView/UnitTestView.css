@@ -33,4 +33,7 @@
 .changeIDs .ant-form-item-required {
   color: white;
 }
+.changeIDs .ant-form-item-label > label {
+  color: white;
+}
 /*# sourceMappingURL=UnitTestView.css.map */

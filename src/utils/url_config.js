@@ -64,4 +64,4 @@ export let PERSONALMESSIONLIST = '/personalmessionlist'
 export let markMgtData = "/marking"
 export let markMgtDataReID = "/markingReID"
 export let markMgtTemp = "/marking/template"
-export let updateIDs = "/updateIDs"
+export let updateSingleID = "/updateSingleID"

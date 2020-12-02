@@ -9,7 +9,7 @@ import CustomBreadcrumb from '../../components/CustomBreadcrumb/index'
 import {_fetch, transform_grade, getGrade, dateFormat, deepCopy, timestamp2Date, _GET, _POST, duplicates} from '../../utils/utils'
 import LoadableComponent from '../../utils/LoadableComponent'
 import {inject, observer} from "mobx-react";
-import {markMgtData, markMgtTemp, HOST, markMgtDataReID, updateIDs} from '../../utils/url_config'
+import {markMgtData, markMgtTemp, HOST, markMgtDataReID, updateSingleID} from '../../utils/url_config'
 import {isAuthenticated} from '../../utils/Session'
 import './UnitTestView.less'
 import CanvasRectComp from './CanvasRectComp.js'
@@ -55,6 +55,7 @@ class UnitTestView extends React.Component {
     super(props);
     // 初始状态
     this.state = {
+      selectRects:[],
       select_Reid:'',
       cacheImgSrcs:[''],
       dataset_max_num: 100,
@@ -248,7 +249,10 @@ class UnitTestView extends React.Component {
     this.drawerOnClose = this.drawerOnClose.bind(this)
     this.jumpImgChange = this.jumpImgChange.bind(this)
     this.labelChange = this.labelChange.bind(this)
+    this.changeIDlabelChange = this.changeIDlabelChange.bind(this)
     this.selectAll = this.selectAll.bind(this)
+
+    this._updateTempLayers = this._updateTempLayers.bind(this)
 
     this._getHerfRouterParams = this._getHerfRouterParams.bind(this)
     this._getImgList = this._getImgList.bind(this)
@@ -275,7 +279,7 @@ class UnitTestView extends React.Component {
     this.saveInfo = this.saveInfo.bind(this)
     this.clearCanvas = this.clearCanvas.bind(this)
 
-    this.SubmitChangeIDs = this.SubmitChangeIDs.bind(this)
+    this.SubmitChangeSingleID = this.SubmitChangeSingleID.bind(this)
   }
 
   CreateUpdateIDFormManFun = () => {
@@ -347,23 +351,58 @@ class UnitTestView extends React.Component {
         },
       };
 
+      let canvas_reid_0_layersTemp = deepCopy(this.state.canvas_reid_0.layersTemp)
+
+      canvas_reid_0_layersTemp.sort((x,y)=>{
+        if (x.id > y.id){
+          return 1
+        }else {
+          return -1
+        }
+      })
+
+      console.log(canvas_reid_0_layersTemp)
+
+      canvas_reid_0_layersTemp = canvas_reid_0_layersTemp.map((value, index)=>{
+        return (
+          <Option value={value.labelOpt.idx}>
+            {`id : ${value.id}`}
+          </Option>
+        )
+      })
+
       return (
-        <Form layout="vertical" hideRequiredMark style={{marginTop: 20}} onSubmit={this.SubmitChangeIDs}>
+        <Form layout="vertical" hideRequiredMark style={{marginTop: 20}} onSubmit={this.SubmitChangeSingleID}>
           <Row className='changeIDs' gutter={16}>
             <Col span={12}>
               <FormItem label='原始 id:'>
+                {/*{*/}
+                {/*  getFieldDecorator('id_ori', {*/}
+                {/*    initialValue: "",*/}
+                {/*    rules: [*/}
+                {/*      {*/}
+                {/*        pattern: /^\d+$/,*/}
+                {/*        required: true,*/}
+                {/*        message: '请输入正确的id (数字)'*/}
+                {/*      }*/}
+                {/*    ]*/}
+                {/*  })(*/}
+                {/*    <Input className={'id_ori_input'}/>*/}
+                {/*  )*/}
+                {/*}*/}
                 {
                   getFieldDecorator('id_ori', {
-                    initialValue: "",
                     rules: [
                       {
-                        pattern: /^\d+$/,
                         required: true,
-                        message: '请输入正确的id (数字)'
+                        message: '请选择正确的id'
                       }
                     ]
                   })(
-                    <Input className={'id_ori_input'}/>
+                    <Select
+                      style={{ width: 200 }} maxTagCount={1} onChange={this.changeIDlabelChange} >
+                      {canvas_reid_0_layersTemp}
+                    </Select>
                   )
                 }
               </FormItem>
@@ -402,12 +441,42 @@ class UnitTestView extends React.Component {
 
     let canvas_reid_0_tmp = deepCopy(this.state.canvas_reid_0)
     canvas_reid_0_tmp.options.layers = layers
+
+    let defaultSelectRects = []
+    canvas_reid_0_tmp.layersTemp.forEach((value, index)=>{
+      defaultSelectRects.push(value.labelOpt.idx)
+    });
+
     this.setState({
-      canvas_reid_0: canvas_reid_0_tmp
+      canvas_reid_0: canvas_reid_0_tmp,
+      selectRects:defaultSelectRects
     }, ()=>{
       this.refs.canvasPanel.clearCanvas();
       this.refs.canvasPanel.echoRectangle();
     })
+  }
+
+  // change single id
+  changeIDlabelChange(e){
+    // console.log(e)
+    this.checked = true
+    let layer = {}
+    for (let i = 0; i < this.state.canvas_reid_0.layersTemp.length; i++) {
+      if (e === this.state.canvas_reid_0.layersTemp[i].labelOpt.idx) {
+        layer = this.state.canvas_reid_0.layersTemp[i];
+        // console.log(layer)
+
+        let eTmp = {
+          offsetX: (layer.x2 + layer.x1) / 2,
+          offsetY: (layer.y2 + layer.y1) / 2,
+        }
+
+        this.refs.canvasPanel.canvasMouseMove(eTmp)
+
+        break
+      }
+    }
+
   }
 
   // 下拉labelOption change
@@ -430,7 +499,8 @@ class UnitTestView extends React.Component {
     let canvas_reid_0_tmp = deepCopy(this.state.canvas_reid_0)
     canvas_reid_0_tmp.options.layers = layers
     this.setState({
-      canvas_reid_0: canvas_reid_0_tmp
+      canvas_reid_0: canvas_reid_0_tmp,
+      selectRects:e,
     }, ()=>{
       this.refs.canvasPanel.clearCanvas();
       this.refs.canvasPanel.echoRectangle();
@@ -568,7 +638,8 @@ class UnitTestView extends React.Component {
 
   // 保存
   saveInfo(callback) {
-    let tempLayers = this.refs.canvasPanel.state.canvasRectObj.layers;
+    // let tempLayers = this.refs.canvasPanel.state.canvasRectObj.layers;
+    let tempLayers = deepCopy(this.state.canvas_reid_0.layersTemp)
 
     // 标注信息
     let mark_info = [];
@@ -915,6 +986,11 @@ class UnitTestView extends React.Component {
             }, 500);
           }
         })
+
+        setTimeout(()=>{
+          this.selectAll();
+        }, 700)
+
       } else {
         message.warning("照片数据查询失败!");
       }
@@ -1354,7 +1430,20 @@ class UnitTestView extends React.Component {
         })
         let canvas_reid_0 = deepCopy(this.state.canvas_reid_0)
         canvas_reid_0.options.layers = newVal;
-        canvas_reid_0.layersTemp = newVal
+        // canvas_reid_0.layersTemp = newVal
+        // 合并
+        // copy 检测更新 layersTemp 逻辑
+        for (let i = 0; i < newVal.length; i++) {
+          for (let j = 0; j < canvas_reid_0.layersTemp.length; j++) {
+            let item1 = newVal[i], item2 = canvas_reid_0.layersTemp[j];
+
+            if (item1.labelOpt.idx === item2.labelOpt.idx) {
+              canvas_reid_0.layersTemp[j].id = item1.id
+              break
+            }
+          }
+        }
+
         this.setState({
           canvas_reid_0: canvas_reid_0,
           dataset_max_num: new_ID
@@ -1374,6 +1463,10 @@ class UnitTestView extends React.Component {
 
   }
 
+  _updateTempLayers() {
+
+  }
+
   _contextmenu(e) {
     message.warning('点击右键')
   }
@@ -1384,13 +1477,25 @@ class UnitTestView extends React.Component {
     })
   }
 
-  SubmitChangeIDs = (e) => {
+  SubmitChangeSingleID = (e) => {
     this.SubmitChangeIDsform.validateFieldsAndScroll((err, values) => {
       if (err) {
         console.log(err)
         message.warning('请先填写正确的表单')
       } else {
         let {id_ori, id_new} = values
+
+        let layer = {}
+        for (let i = 0; i < this.state.canvas_reid_0.layersTemp.length; i++) {
+          if (id_ori === this.state.canvas_reid_0.layersTemp[i].labelOpt.idx) {
+            layer = this.state.canvas_reid_0.layersTemp[i];
+            layer.index = i
+            console.log(layer)
+            break
+          }
+        }
+
+
         // 更新 reid 逻辑
         console.log(`id ${id_ori} 改为 ${id_new}`)
 
@@ -1398,13 +1503,15 @@ class UnitTestView extends React.Component {
           data_id: this.state.data_id,
           mession_id: this.state.mession_id,
           user_name: this.state.user_name,
-          id_ori: id_ori,
+          pic_id: this.state.canvas_reid_0.currentImgData.id,
+          // id_ori: id_ori,
+          id_ori: layer,
           id_new: id_new
         };
         this.setState({
           loading: true
         }, () => {
-          _fetch(local_url + updateIDs, params, (res) => {
+          _fetch(local_url + updateSingleID, params, (res) => {
             this.setState({
               loading: false
             }, () => {
@@ -1446,7 +1553,21 @@ class UnitTestView extends React.Component {
 
         let canvas_reid_0 = deepCopy(this.state.canvas_reid_0)
         canvas_reid_0.options.layers = newVal;
-        canvas_reid_0.layersTemp = newVal
+        // canvas_reid_0.layersTemp = newVal
+
+        // 合并
+        // copy 检测更新 layersTemp 逻辑
+        for (let i = 0; i < newVal.length; i++) {
+          for (let j = 0; j < canvas_reid_0.layersTemp.length; j++) {
+            let item1 = newVal[i], item2 = canvas_reid_0.layersTemp[j];
+
+            if (item1.labelOpt.idx === item2.labelOpt.idx) {
+              canvas_reid_0.layersTemp[j].id = item1.id
+              break
+            }
+          }
+        }
+
 
         this.setState({
           modal_visible: false,
@@ -1457,52 +1578,6 @@ class UnitTestView extends React.Component {
           this.refs.canvasPanel.echoRectangle()
         });
 
-        // let params = {
-        //   data_id: this.state.data_id,
-        //   mession_id: this.state.mession_id,
-        //   user_name: this.state.user_name,
-        //   id_ori: id_ori,
-        //   id_new: id
-        // };
-        // this.setState({
-        //   loading: true
-        // }, () => {
-        //   _fetch(local_url + updateIDs, params, (res) => {
-        //     this.setState({
-        //       loading: false,
-        //       modal_visible: false
-        //     }, () => {
-        //       document.addEventListener('keydown', this._keypress);
-        //       if (res.code == 0) {
-        //         message.success(`更新成功, id ${id_ori} 改为 ${id}`)
-        //         this.clearCanvas();
-        //         this._getImgList();
-        //       } else {
-        //         message.error(`更新失败, ${res.message}`)
-        //       }
-        //     })
-        //   })
-        // })
-
-
-        // //更新 id
-        // let newVal = this.refs.canvasPanel.state.canvasRectObj.layers;
-        // if (!newVal.length) return;
-        // newVal.forEach((item, index) => {
-        //   if (this.rectInLayer[0].labelOpt.idx === item.labelOpt.idx) {
-        //     item.id = parseInt(id)
-        //   }
-        // })
-        // let canvas_reid_0 = deepCopy(this.state.canvas_reid_0)
-        // canvas_reid_0.options.layers = newVal;
-        // this.setState({
-        //   modal_visible: false,
-        //   canvas_reid_0: canvas_reid_0
-        // }, () => {
-        //   console.log('提交 modal')
-        //   document.addEventListener('keydown', this._keypress);
-        //   this.refs.canvasPanel.echoRectangle()
-        // });
       }
     });
 
@@ -1690,10 +1765,10 @@ class UnitTestView extends React.Component {
                 {/*</Row>*/}
               </Col>
             </Row>
-            {/*{this.CreateChangeIDsFormManFun()}*/}
-            {/*<Button onClick={this.SubmitChangeIDs} type="primary">*/}
-            {/*  提交修改*/}
-            {/*</Button>*/}
+            {this.CreateChangeIDsFormManFun()}
+            <Button onClick={this.SubmitChangeSingleID} type="primary">
+              提交修改
+            </Button>
             <Row style={{marginTop:20}}>
               <Select placeholder={"跳转页数"} style={{ width: 120 }} onChange={this.jumpImgChange}>
                 {Select_options}
@@ -1701,7 +1776,9 @@ class UnitTestView extends React.Component {
             </Row>
             <Row gutter={16} type="flex" justify="space-between" style={{marginTop:20}}>
               <Col span={20}>
-                <Select defaultValue={defaultSelectRects}
+                <Select
+                  // defaultValue={defaultSelectRects}
+                  value={this.state.selectRects}
                   style={{ width: 200 }} mode="multiple" maxTagCount={1} onChange={this.labelChange} >
                   {canvas_reid_0_layersTemp}
                 </Select>
