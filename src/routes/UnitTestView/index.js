@@ -414,7 +414,8 @@ class UnitTestView extends React.Component {
                     initialValue: "",
                     rules: [
                       {
-                        pattern: /^\d+$/,
+                        // pattern: /^\d+$/,
+                        pattern: /^((\d+)|(-1)|(-2))$/,
                         required: true,
                         message: '请输入正确的id (数字)'
                       }
@@ -587,11 +588,11 @@ class UnitTestView extends React.Component {
         repeatIDs = [...new Set([...repeatIDs, ...unMarkedIDs])]
 
 
-        if ((repeatIDs.length == 1 && repeatIDs.indexOf(-1) == -1) || (repeatIDs.length > 1 )) {
+        // if ((repeatIDs.length == 1 && repeatIDs.indexOf(-1) == -1) || (repeatIDs.length > 1 )) {
           // message.error('有重复 id 或 未标注 id, 请修改')
-          message.error('有重复 id , 请修改')
+          // message.error('有重复 id , 请修改')
           this.refs.canvasPanel.state.canvasRectObj.highlightSelectRect(repeatIDs, this.refs.canvasPanel)
-        } else {
+        // } else {
           this.saveInfo(
             (res) => {
               // console.log(this.wholeVar)
@@ -607,7 +608,7 @@ class UnitTestView extends React.Component {
               this._getImgList();
             }
           )
-        }
+        // }
       } else {
         if (this.state.wholeVar.currentIndex < this.state.wholeVar.finished) {
 
@@ -904,6 +905,9 @@ class UnitTestView extends React.Component {
         let img_list = [lastPerImgDataTop_picList, lastPerImgDataBot_picList, lastPerImgDataCenter_picList, picList]
         let img_datas = [{}, {}, {}, {}]
         for (let i = 0; i < img_datas.length; i++) {
+          console.log('***')
+          console.log(img_list[i].path)
+          console.log('***')
           img_datas[i] = {
             id: img_list[i].id,
             props: {
