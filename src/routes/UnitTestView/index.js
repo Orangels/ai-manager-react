@@ -55,6 +55,7 @@ class UnitTestView extends React.Component {
     super(props);
     // 初始状态
     this.state = {
+      selectFiles:[],
       selectRects:[],
       select_Reid:'',
       cacheImgSrcs:[''],
@@ -280,6 +281,8 @@ class UnitTestView extends React.Component {
     this.clearCanvas = this.clearCanvas.bind(this)
 
     this.SubmitChangeSingleID = this.SubmitChangeSingleID.bind(this)
+
+    this.uploadLocalImg = this.uploadLocalImg.bind(this)
   }
 
   CreateUpdateIDFormManFun = () => {
@@ -361,7 +364,7 @@ class UnitTestView extends React.Component {
         }
       })
 
-      console.log(canvas_reid_0_layersTemp)
+      // console.log(canvas_reid_0_layersTemp)
 
       canvas_reid_0_layersTemp = canvas_reid_0_layersTemp.map((value, index)=>{
         return (
@@ -585,14 +588,21 @@ class UnitTestView extends React.Component {
         // 返回值是 Set
         let repeatIDs = duplicates(idArr)
         console.log(repeatIDs)
-        repeatIDs = [...new Set([...repeatIDs, ...unMarkedIDs])]
+        // repeatIDs = [...new Set([...repeatIDs, ...unMarkedIDs])]
+        repeatIDs = new Set([...repeatIDs, ...unMarkedIDs])
+        if (repeatIDs.has(-1)){
+          repeatIDs.delete(-1)
+        }
+        if (repeatIDs.has(-2)){
+          repeatIDs.delete(-2)
+        }
 
-
-        // if ((repeatIDs.length == 1 && repeatIDs.indexOf(-1) == -1) || (repeatIDs.length > 1 )) {
-          // message.error('有重复 id 或 未标注 id, 请修改')
-          // message.error('有重复 id , 请修改')
+        if (repeatIDs.size > 0){
+        // if ((repeatIDs.length == 1 && (repeatIDs.indexOf(-1) == -1 || repeatIDs.indexOf(-1) == -2)) || (repeatIDs.length > 1 )) {
+        //   message.error('有重复 id 或 未标注 id, 请修改')
+          message.error('有重复 id , 请修改')
           this.refs.canvasPanel.state.canvasRectObj.highlightSelectRect(repeatIDs, this.refs.canvasPanel)
-        // } else {
+        } else {
           this.saveInfo(
             (res) => {
               // console.log(this.wholeVar)
@@ -608,7 +618,7 @@ class UnitTestView extends React.Component {
               this._getImgList();
             }
           )
-        // }
+        }
       } else {
         if (this.state.wholeVar.currentIndex < this.state.wholeVar.finished) {
 
@@ -783,6 +793,11 @@ class UnitTestView extends React.Component {
     let canvas_last_reid_bot = deepCopy(this.state.canvas_last_reid_bot);
     let canvas_last_reid_center = deepCopy(this.state.canvas_last_reid_center);
 
+    console.log(456)
+    console.log(canvas_reid_0)
+    console.log(456)
+
+
     canvas_reid_0.currentImgData.props.domWidth = _ww
     canvas_reid_0.currentImgData.props.domHeight = _hh
 
@@ -811,6 +826,7 @@ class UnitTestView extends React.Component {
       canvas_last_reid_bot,
       canvas_last_reid_center
     }, () => {
+      console.log(this.state.canvas_reid_0)
       console.log('加载图片完成')
     })
   }
@@ -903,7 +919,10 @@ class UnitTestView extends React.Component {
         let cacheImgList = res.pic_list[4]
 
         let img_list = [lastPerImgDataTop_picList, lastPerImgDataBot_picList, lastPerImgDataCenter_picList, picList]
+
+
         let img_datas = [{}, {}, {}, {}]
+
         for (let i = 0; i < img_datas.length; i++) {
           console.log('***')
           console.log(img_list[i].path)
@@ -912,6 +931,7 @@ class UnitTestView extends React.Component {
             id: img_list[i].id,
             props: {
               src: img_list[i].path,
+              // src: img_list[i].path.split('/')[-1],
               name: img_list[i].name,
               width: img_list[i].whd.width,
               height: img_list[i].whd.height,
@@ -924,6 +944,24 @@ class UnitTestView extends React.Component {
             tagChecked: img_list[i].pic_info
           }
         }
+
+        for (let file of this.state.selectFiles){
+          let file_path = file.webkitRelativePath
+          for (let i = 0; i < img_list.length; i++) {
+            let current_img_string_arr = img_list[i].path.split('/')
+            let current_img_name = current_img_string_arr[current_img_string_arr.length-1]
+            if (file_path.indexOf(current_img_name) != -1){
+              console.log(`file_path 存在 ${current_img_name}`)
+              let reader = new FileReader();
+              reader.readAsDataURL(file);
+              reader.onloadend = function(){
+                /// deal data.
+                img_datas[i].props.src = reader.result
+              }
+            }
+          }
+        }
+
 
         let canvas_reid_0 = deepCopy(this.state.canvas_reid_0)
         let canvas_last_reid_top = deepCopy(this.state.canvas_last_reid_top)
@@ -953,9 +991,17 @@ class UnitTestView extends React.Component {
             setTimeout(() => {
               this._initCanvasDom('init');
             }, 400)
+            // setTimeout(() => {
+            //   this._initCanvasDom('init');
+            // }, 100)
+          }else{
+            setTimeout(() => {
+              this._initCanvasDom('init');
+            }, 800)
           }
 
-          this._initCanvasDom('init');
+
+          // this._initCanvasDom('init');
 
           // setTimeout(() => {
           //   this.echoDraw()
@@ -980,20 +1026,32 @@ class UnitTestView extends React.Component {
             this.setState({
               loading: true
             }, () => {
+            //   setTimeout(() => {
+            //     this.echoDraw()
+            //   }, 500);
+            // })
               setTimeout(() => {
                 this.echoDraw()
-              }, 500);
+              }, 900);
             })
           } else {
+            // setTimeout(() => {
+            //   this.echoDraw()
+            // }, 500);
+
             setTimeout(() => {
               this.echoDraw()
-            }, 500);
+            }, 900);
           }
         })
 
+        // setTimeout(()=>{
+        //   this.selectAll();
+        // }, 700)
+
         setTimeout(()=>{
           this.selectAll();
-        }, 700)
+        }, 1000)
 
       } else {
         message.warning("照片数据查询失败!");
@@ -1083,6 +1141,10 @@ class UnitTestView extends React.Component {
     let canvas_last_reid_top = deepCopy(this.state.canvas_last_reid_top)
     let canvas_last_reid_bot = deepCopy(this.state.canvas_last_reid_bot)
     let canvas_last_reid_center = deepCopy(this.state.canvas_last_reid_center)
+
+    console.log('123')
+    console.log(canvas_reid_0)
+    console.log('123')
 
     this.echoTag();
     this.echoMark(canvas_reid_0, 0);
@@ -1601,6 +1663,35 @@ class UnitTestView extends React.Component {
     });
   };
 
+  uploadLocalImg(){
+    console.log('上传本地图片')
+    let selectFiles = document.getElementById("selectLocalFiles").files;
+    console.log(selectFiles)
+    this.setState({
+      selectFiles
+    }, ()=>{
+      this._getImgList()
+    })
+    // for(var file of selectFiles){
+    //   console.log(file.webkitRelativePath);
+    //   /// read file content.
+    //   var reader = new FileReader();
+    //   reader.readAsDataURL(file);
+    //   reader.onloadend = function(){
+    //     /// deal data.
+    //     var img = new Image();
+    //     /// after loader, result storage the file content result.
+    //     img.src = this.result;
+    //     img.onload = function(){
+    //       var myCanvas = document.getElementById("myCanvas");
+    //       var cxt = myCanvas.getContext('2d');
+    //       cxt.drawImage(img, imgPosX, 0);
+    //       imgPosX += imgWidth;
+    //     }
+    //   }
+    // }
+  }
+
   render() {
     let Select_options = []
     for (let i = 0; i <= this.state.wholeVar.finished; i++){
@@ -1637,6 +1728,10 @@ class UnitTestView extends React.Component {
       )
     })
 
+
+    console.log('***')
+    console.log(this.state.canvas_reid_0.currentImgData)
+    console.log('***')
 
 
     return (
@@ -1793,6 +1888,9 @@ class UnitTestView extends React.Component {
                 </Button>
               </Col>
             </Row>
+            <Row>
+              <input style={{marginTop:20, color:'white'}} type="file" id="selectLocalFiles" onChange={this.uploadLocalImg} multiple="" webkitdirectory="" />
+            </Row>
           </Drawer>
           <Col className="anno-r-content" span={24} style={{
             height: '100%',
@@ -1824,7 +1922,10 @@ class UnitTestView extends React.Component {
                   <img id="canvas_img_id_last_top" style={{
                     // width: this.state.currentImgData.props.domWidth
                     width: "100%"
-                  }} src={`//${this.state.canvas_last_reid_top.currentImgData.props.src}`}/>
+                  }}
+                       src={this.state.selectFiles.length > 0 ? `${this.state.canvas_last_reid_top.currentImgData.props.src}` : `//${this.state.canvas_last_reid_top.currentImgData.props.src}`}
+                       // src={`//${this.state.canvas_last_reid_top.currentImgData.props.src}`}
+                  />
                 </CanvasRectComp>
               </Col>
               <Col className={'last_2p'} span={last_2p_sapn}>
@@ -1846,7 +1947,10 @@ class UnitTestView extends React.Component {
                   <img id="canvas_img_id_last_bot" style={{
                     // width: this.state.currentImgData.props.domWidth
                     width: "100%"
-                  }} src={`//${this.state.canvas_last_reid_bot.currentImgData.props.src}`}/>
+                  }}
+                       src={this.state.selectFiles.length > 0 ? `${this.state.canvas_last_reid_bot.currentImgData.props.src}` : `//${this.state.canvas_last_reid_bot.currentImgData.props.src}`}
+                       // src={`//${this.state.canvas_last_reid_bot.currentImgData.props.src}`}
+                  />
                 </CanvasRectComp>
               </Col>
               <Col className={'last_center'} span={24 - last_2p_sapn * 2} style={{
@@ -1873,7 +1977,10 @@ class UnitTestView extends React.Component {
                     <img id="canvas_img_id_last_center" style={{
                       // width: this.state.currentImgData.props.domWidth
                       width: "100%"
-                    }} src={`//${this.state.canvas_last_reid_center.currentImgData.props.src}`}/>
+                    }}
+                         src={this.state.selectFiles.length > 0 ? `${this.state.canvas_last_reid_center.currentImgData.props.src}` : `//${this.state.canvas_last_reid_center.currentImgData.props.src}`}
+                         // src={`//${this.state.canvas_last_reid_center.currentImgData.props.src}`}
+                    />
                   </CanvasRectComp>
                 </div>
               </Col>
@@ -1897,10 +2004,16 @@ class UnitTestView extends React.Component {
                   // TODO 添加 鼠标悬停 映射方法
 
                 >
+                  {/*<img id="canvas_img_id" style={{*/}
+                  {/*  width: this.state.canvas_reid_0.currentImgData.props.domWidth*/}
+                  {/*}} src={`//${this.state.canvas_reid_0.currentImgData.props.src}`}/>*/}
                   <img id="canvas_img_id" style={{
                     width: this.state.canvas_reid_0.currentImgData.props.domWidth
-                  }} src={`//${this.state.canvas_reid_0.currentImgData.props.src}`}/>
-                  <img className={'cacheImg'} src={`//${this.state.cacheImgSrcs[0]}`} width={0} style={{position:"absolute", bottom:0}}/>
+                  }} src={this.state.selectFiles.length > 0 ? `${this.state.canvas_reid_0.currentImgData.props.src}` : `//${this.state.canvas_reid_0.currentImgData.props.src}`}/>
+                  <img className={'cacheImg'}
+                       src={this.state.selectFiles.length > 0 ? `${this.state.cacheImgSrcs[0]}` : `//${this.state.cacheImgSrcs[0]}`}
+                       // src={`//${this.state.cacheImgSrcs[0]}`}
+                       width={0} style={{position:"absolute", bottom:0}}/>
                 </CanvasRectComp>
               </Col>
             </Row>

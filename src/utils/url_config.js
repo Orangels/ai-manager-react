@@ -13,8 +13,9 @@ export let HOST = function () {
     }else {
         // //测试
         // url = 'http://127.0.0.1:9000'
-        url = 'http://172.16.104.80:9000'
+        // url = 'http://172.16.104.80:9000'
         // url = 'http://192.168.88.191:9000'
+        url = 'http://211.103.201.178:9000'
     }
 
     return url
